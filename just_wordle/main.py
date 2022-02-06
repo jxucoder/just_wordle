@@ -9,15 +9,11 @@ from google.oauth2 import service_account
 from google.cloud import bigquery
 import uuid
 from defs import COLORED_SQUARE_MAPPING
+import os
+import json
+URL = "https://justwordle.com/"
 
-
-# Create API client.
-credentials = service_account.Credentials.from_service_account_info(
-    st.secrets["gcp_service_account"]
-)
-client = bigquery.Client(credentials=credentials)
-
-def run_query(query):
+def run_query(client, query):
     query_job = client.query(query)
     rows_raw = query_job.result()
     # Convert to list of dicts. Required for st.cache to hash the return value.
@@ -25,7 +21,7 @@ def run_query(query):
     return rows
 
 
-session_state = SessionState.get(answer='ITACS', tries=[])
+session_state = SessionState.get(answer="", tries=[], name="", social_media_link="")
 query_params = st.experimental_get_query_params()
 wordle_key = query_params["wordle_key"][0] if "wordle_key" in query_params else None
 
@@ -73,28 +69,49 @@ def add_word(input_word):
     squares_matrix_text = "\n".join(squares_matrix)
     st.code(squares_matrix_text)
 
-st.title("Just Wordle")
 
-if wordle_key:
-    st.write(CSS, unsafe_allow_html=True)
-    print(wordle_key)
-    rows = run_query(f"SELECT * FROM `openwordle.wordles.wordles` where wordle_key='{wordle_key}'")
+st.title("Just Wordle")
+st.write(CSS, unsafe_allow_html=True)
+
+if wordle_key and session_state.answer == "":
+    # create API client.
+    credentials = service_account.Credentials.from_service_account_info(
+        json.loads(os.environ.get('GOOGLE_APPLICATION_CREDENTIALS'))
+    )
+    client = bigquery.Client(credentials=credentials)
+    rows = run_query(client, f"SELECT * FROM `openwordle.wordles.wordles` where wordle_key='{wordle_key}'")
     if len(rows) == 0:
         st.warning("We couldn't find a wordle associated with this URL.")
-        st.warning
+        st.write(f"Visit [Just Wordle]({URL}) to create a wordle of your own.")
     else:
+        record = rows[0]
+        session_state.answer = record['answer']
+        session_state.name = record['name']
+        session_state.social_media_link = record['link']
+        st.write(f"by [{session_state.name}]({session_state.social_media_link})")
         c = st.container()
         guess = st.text_input('Enter your guess')
         if guess:
             add_word(guess)
+
+elif wordle_key and session_state.answer:
+    st.write(f"by [{session_state.name}]({session_state.social_media_link})")
+    c = st.container()
+    guess = st.text_input('Enter your guess')
+    if guess:
+        add_word(guess)
+
 else:
     st.subheader("Create your own wordle")
     word_from_form = st.text_input("Word")
     name_from_form = st.text_input("Your name")
     social_from_form = st.text_input("Social Media link")
     btn = st.button("Create Wordle")
-
     if btn:
+        credentials = service_account.Credentials.from_service_account_info(
+            json.loads(os.environ.get('GOOGLE_APPLICATION_CREDENTIALS'))
+        )
+        client = bigquery.Client(credentials=credentials)
         uuid_rand = uuid.uuid4().hex
         rows_to_insert = [
             {"wordle_key": uuid_rand,
