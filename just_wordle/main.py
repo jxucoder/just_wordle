@@ -77,10 +77,9 @@ def add_word(container, input_word):
     if set(classes) == set([LetterStatus.hit]):
         st.session_state.win = True
         with st.form("win_form"):
-            st.write("Congratulations! You won!")
+            st.success("Congratulations! You won!")
             record_name = st.text_input("name/alias to display in leaderboard")
             record_social_link = st.text_input("social media link to share (optional)")
-            st.write()
             submitted = st.form_submit_button("Submit to leaderboard")
             if submitted:
                 if not record_name.isidentifier():
