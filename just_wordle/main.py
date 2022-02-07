@@ -13,7 +13,6 @@ from datetime import datetime
 
 URL = "https://justwordle.com/"
 
-
 def run_query(client, query):
     query_job = client.query(query)
     rows_raw = query_job.result()
@@ -32,6 +31,7 @@ class LetterStatus(Enum):
     mention = "mention"
     hit = "hit"
 
+
 def get_classes(input_word):
     classes = [LetterStatus.miss] * len(input_word)
     for i, letter in enumerate(input_word):
@@ -41,6 +41,7 @@ def get_classes(input_word):
         if letter == session_state.answer[i]:
             classes[i] = LetterStatus.hit
     return classes
+
 
 def create_guess_table(classes, word_try):
     cells = [f"<td><div class='{classes[i].value}' style='font-size:7vmin'>{word_try[i]}</div></td>" for i in range(len(word_try))]
@@ -52,6 +53,7 @@ def create_guess_table(classes, word_try):
               </tr>
             </table>
             """
+
 
 def add_word(container, input_word):
     if not input_word.isalpha():
@@ -76,14 +78,13 @@ def add_word(container, input_word):
     st.code(squares_matrix_text)
     if set(classes) == set([LetterStatus.hit]):
         session_state.win = True
-        with st.form("my_form"):
+        with st.form("win_form"):
             st.write("Congratulations! You won!")
             record_name = st.text_input("name/alias to display in leaderboard")
             record_social_link = st.text_input("social media link to share (optional)")
-            st.write(f"Check leaderboard({URL}?wordle_key={wordle_key}&leaderboard=true)")
+            st.write()
             submitted = st.form_submit_button("Submit to leaderboard")
             if submitted:
-                print("submitted")
                 if not record_name.isidentifier():
                     st.warning("The name/alias can only have English letters")
                 else:
@@ -103,6 +104,7 @@ def add_word(container, input_word):
                         print("New rows have been added.")
                     else:
                         print(errors)
+                    st.success(f"Submitted successfully! Check [leaderboard]({URL}?wordle_key={wordle_key}&leaderboard=true)")
 
 def validate_guess_and_refresh(guess):
     if guess:
@@ -118,7 +120,7 @@ def create_client():
     client = bigquery.Client(credentials=credentials)
     return client
 
-st.title("Just Wordle")
+st.title("Just [Wordle](https://justwordle.com)")
 st.write(CSS, unsafe_allow_html=True)
 
 if wordle_key and leaderboard == "true":
@@ -133,9 +135,8 @@ if wordle_key and leaderboard == "true":
         social_media_link = row['social_media_link']
         word_guess = row['word_guess']
         word_status = row['word_status']
-        st.write("[name](social_media_link)")
-        st.write(word_guess)
-        st.write(word_status)
+        st.write(f"[{name}](social_media_link) guessed: {word_guess}")
+        st.code(word_status)
         st.write('----')
 
 elif wordle_key and session_state.answer == "":
@@ -168,33 +169,34 @@ elif wordle_key and session_state.answer:
 else:
     # case 3: create your own wordle
     st.subheader("Create your own wordle")
-    word_from_form = st.text_input("Word")
-    name_from_form = st.text_input("Your name/alias (lower case and numbers only)")
-    hint_from_form = st.text_input("Hint")
-    social_from_form = st.text_input("Social Media link (optional)")
-    btn = st.button("Create Wordle")
-    if btn:
-        if not word_from_form.isalpha():
-            st.warning("The word can only have English letters")
-        if not (name_from_form.isidentifier() and name_from_form.islower()):
-            st.warning("The name/alias can only have lower case English letters or numbers")
-        else:
-            client = create_client()
-            uuid_rand = uuid.uuid4().hex[:8]
-            rows_to_insert = [
-                {"wordle_key": uuid_rand,
-                 "answer": word_from_form.upper(),
-                 "name": name_from_form.lower(),
-                 "hint": hint_from_form,
-                 "link": social_from_form},
-            ]
-            dataset_ref = client.dataset('wordles')
-            table_ref = dataset_ref.table('wordles')
-
-            errors = client.insert_rows_json(table_ref, rows_to_insert)  # Make an API request.
-            if errors == []:
-                print("New rows have been added.")
+    with st.form("create_form"):
+        word_from_form = st.text_input("Word")
+        name_from_form = st.text_input("Your name/alias (lower case and numbers only)")
+        hint_from_form = st.text_input("Hint")
+        social_from_form = st.text_input("Social Media link (optional)")
+        btn = st.form_submit_button("Create Wordle")
+        if btn:
+            if not word_from_form.isalpha():
+                st.warning("The word can only have English letters")
+            if not (name_from_form.isidentifier() and name_from_form.islower()):
+                st.warning("The name/alias can only have lower case English letters or numbers")
             else:
-                print(errors)
-            st.text_area("", value=f'Hi I created a Wordle at https://justwordle.com/?wordle_key={uuid_rand}. '
-                            f'Can you solve it?')
+                client = create_client()
+                uuid_rand = uuid.uuid4().hex[:8]
+                rows_to_insert = [
+                    {"wordle_key": uuid_rand,
+                     "answer": word_from_form.upper(),
+                     "name": name_from_form.lower(),
+                     "hint": hint_from_form,
+                     "link": social_from_form},
+                ]
+                dataset_ref = client.dataset('wordles')
+                table_ref = dataset_ref.table('wordles')
+
+                errors = client.insert_rows_json(table_ref, rows_to_insert)  # Make an API request.
+                if errors == []:
+                    print("New rows have been added.")
+                else:
+                    print(errors)
+                st.code(f'Hi! I created a Wordle at https://justwordle.com/?wordle_key={uuid_rand}. '
+                        f'Can you solve it?')
