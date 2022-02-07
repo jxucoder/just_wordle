@@ -71,6 +71,7 @@ def add_word(container, input_word):
             pass
         else:
             st.session_state.tries.append(input_word)
+
     squares_matrix = []
     words_matrix = []
     for word_try in st.session_state.tries:
@@ -80,7 +81,9 @@ def add_word(container, input_word):
         container.write(create_guess_table(classes, word_try), unsafe_allow_html=True)
     squares_matrix_text = "\n".join(squares_matrix)
     words_matrix_text = ", ".join(words_matrix)
+
     st.code(squares_matrix_text)
+
     if set(classes) == set([LetterStatus.hit]):
         st.session_state.win = True
         with st.form("win_form"):
@@ -92,7 +95,6 @@ def add_word(container, input_word):
                 if not record_name.isidentifier():
                     st.warning("The name/alias can only have English letters")
                 else:
-                    client = create_client()
                     rows_to_insert = [
                         {"wordle_key": wordle_key,
                          "name": record_name,
@@ -101,13 +103,7 @@ def add_word(container, input_word):
                          "word_status": squares_matrix_text,
                          "word_guess": words_matrix_text},
                     ]
-                    dataset_ref = client.dataset('wordles')
-                    table_ref = dataset_ref.table('tries')
-                    errors = client.insert_rows_json(table_ref, rows_to_insert)  # Make an API request.
-                    if errors == []:
-                        print("New rows have been added.")
-                    else:
-                        print(errors)
+                    insert_rows_into_table('wordles', 'tries', rows_to_insert)
                     st.success(f"Submitted successfully! Check [leaderboard]({URL}?wordle_key={wordle_key}&leaderboard=true)")
 
 def validate_guess_and_refresh(guess):
@@ -123,6 +119,14 @@ def create_client():
     )
     client = bigquery.Client(credentials=credentials)
     return client
+
+
+def insert_rows_into_table(dataset, table, rows_to_insert):
+    client = create_client()
+    dataset_ref = client.dataset(dataset)
+    table_ref = dataset_ref.table(table)
+    errors = client.insert_rows_json(table_ref, rows_to_insert)
+
 
 st.title("Just [Wordle](https://justwordle.com)")
 st.write(CSS, unsafe_allow_html=True)
@@ -186,7 +190,6 @@ else:
             if not (name_from_form.isidentifier() and name_from_form.islower()):
                 st.warning("The name/alias can only have lower case English letters or numbers")
             else:
-                client = create_client()
                 uuid_rand = uuid.uuid4().hex[:8]
                 rows_to_insert = [
                     {"wordle_key": uuid_rand,
@@ -195,15 +198,7 @@ else:
                      "hint": hint_from_form,
                      "link": social_from_form},
                 ]
-                dataset_ref = client.dataset('wordles')
-                table_ref = dataset_ref.table('wordles')
-
-                errors = client.insert_rows_json(table_ref, rows_to_insert)  # Make an API request.
-                if errors == []:
-                    print("New rows have been added.")
-                else:
-                    print(errors)
-
+                insert_rows_into_table('wordles', 'tries', rows_to_insert)
                 import streamlit as st
                 from bokeh.models.widgets import Button
                 from bokeh.models import CustomJS
@@ -215,10 +210,11 @@ else:
                 url_safe_sharable_text = urllib.parse.quote(sharable_text)
 
                 st.write(f"Go to this [new wordle](https://justwordle.com/?wordle_key={uuid_rand})")
+                st.write(f"If anyone finishes, you'll see their attempts on"
+                         f"[leaderboard]({URL}?wordle_key={wordle_key}&leaderboard=true) (save this link)")
                 st.write(f"""Or <a href="https://twitter.com/intent/tweet?text={url_safe_sharable_text}" target="_blank" 
                 data-show-count="false">Tweet it out</a>!""",
                          unsafe_allow_html=True)
-
 
                 copy_dict = {"content": sharable_text}
 
