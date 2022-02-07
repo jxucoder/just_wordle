@@ -158,3 +158,4 @@ cython_debug/
 .idea/
 .DS_Store
 *.pyc
+just_wordle/__pycache__/defs.cpython-38.pyc
