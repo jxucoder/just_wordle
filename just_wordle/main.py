@@ -59,7 +59,7 @@ def add_word(container, input_word):
     else:
         input_word = input_word.upper()
         global session_state
-        if len(session_state.tries)>0 and input_word == session_state.tries[-1]:
+        if len(session_state.tries) > 0 and input_word == session_state.tries[-1]:
             pass
         else:
             session_state.tries.append(input_word)
@@ -198,10 +198,3 @@ else:
                 print(errors)
             st.text_area("", value=f'Hi I created a Wordle at https://justwordle.com/?wordle_key={uuid_rand}. '
                             f'Can you solve it?')
-
-
-
-
-
-
-
