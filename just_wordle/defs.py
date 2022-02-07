@@ -1,6 +1,6 @@
 CSS = """<style>
     table {
-      width: 90%;
+      width: 100%;
     }
     td {
       width: 20.%;
