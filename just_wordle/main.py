@@ -212,7 +212,7 @@ else:
                 url_safe_sharable_text = urllib.parse.quote(sharable_text)
 
                 st.write("Go to this [new wordle](https://justwordle.com/?wordle_key={uuid_rand})")
-                st.write(f"""Or <a href="https://twitter.com/intent/tweet?text={url_safe_sharable_text}" class="twitter-share-button" 
+                st.write(f"""Or <a href="https://twitter.com/intent/tweet?text={url_safe_sharable_text}" target="_blank" 
                 data-show-count="false">Tweet it out</a>!""",
                          unsafe_allow_html=True)
 
