@@ -44,7 +44,7 @@ def get_classes(input_word):
 
 
 def create_guess_table(classes, word_try):
-    cells = [f"<td><div class='{classes[i].value}' style='font-size:7vmin'>{word_try[i]}</div></td>" for i in range(len(word_try))]
+    cells = [f"<td><div class='{classes[i].value}' style='font-size:6vmin'>{word_try[i]}</div></td>" for i in range(len(word_try))]
     all_cells_string = "".join(cells)
     return f"""
             <table>
@@ -121,6 +121,7 @@ def create_client():
     return client
 
 st.title("Just [Wordle](https://justwordle.com)")
+st.set_page_config("Just Wordle")
 st.write(CSS, unsafe_allow_html=True)
 
 if wordle_key and leaderboard == "true":
