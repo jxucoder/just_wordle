@@ -171,7 +171,7 @@ if wordle_key and 'answer' in st.session_state:
     guess = st.text_input(f'Enter your guess ({len(st.session_state.answer)} letters)')
     validate_guess_and_refresh(guess)
 
-else:
+if wordle_key is None:
     # case 3: create your own wordle
     st.subheader("Create your own wordle")
     with st.form("create_form"):
