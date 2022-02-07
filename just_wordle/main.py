@@ -133,6 +133,7 @@ st.write(CSS, unsafe_allow_html=True)
 
 if wordle_key and leaderboard == "true":
     # case 0: leaderboard
+    st.subheader(f"Leaderboard for wordle [{wordle_key}](https://justwordle.com/?wordle_key={wordle_key})")
     client = create_client()
     rows = run_query(client, f"SELECT * FROM `openwordle.wordles.tries` "
                              f"where wordle_key='{wordle_key}' "
@@ -210,8 +211,8 @@ else:
                 url_safe_sharable_text = urllib.parse.quote(sharable_text)
 
                 st.write(f"Go to this [new wordle](https://justwordle.com/?wordle_key={uuid_rand})")
-                st.write(f"If anyone finishes, you'll see their attempts on"
-                         f"[leaderboard]({URL}?wordle_key={wordle_key}&leaderboard=true) (save this link)")
+                st.write(f"If anyone finishes, you'll see their attempts on "
+                         f"[leaderboard]({URL}?wordle_key={uuid_rand}&leaderboard=true) (save this link)")
                 st.write(f"""Or <a href="https://twitter.com/intent/tweet?text={url_safe_sharable_text}" target="_blank" 
                 data-show-count="false">Tweet it out</a>!""",
                          unsafe_allow_html=True)
