@@ -4,7 +4,7 @@ from enum import Enum
 from google.oauth2 import service_account
 from google.cloud import bigquery
 import uuid
-from defs import COLORED_SQUARE_MAPPING
+from defs import COLORED_SQUARE_MAPPING, LENGTH_TO_FONT_SIZE_MAPPING
 import os
 import json
 from datetime import datetime
@@ -43,8 +43,15 @@ def get_classes(input_word):
     return classes
 
 
+def get_font_size_from_answer():
+    try:
+        return LENGTH_TO_FONT_SIZE_MAPPING[len(st.session_state.answer)]
+    except:
+        return 3
+
+
 def create_guess_table(classes, word_try):
-    cells = [f"<td><div class='{classes[i].value}' style='font-size:6vmin'>{word_try[i]}</div></td>" for i in range(len(word_try))]
+    cells = [f"<td><div class='{classes[i].value}' style='font-size:{get_font_size_from_answer()}vmin'>{word_try[i]}</div></td>" for i in range(len(word_try))]
     all_cells_string = "".join(cells)
     return f"""
             <table>

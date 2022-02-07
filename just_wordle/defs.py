@@ -49,3 +49,18 @@ COLORED_SQUARE_MAPPING = {
     'hit': GREEN_SQUARE,
     'mention': YELLOW_SQUARE,
 }
+
+LENGTH_TO_FONT_SIZE_MAPPING = {
+    1: 7,
+    2: 7,
+    3: 7,
+    4: 7,
+    5: 7,
+    6: 7,
+    7: 7,
+    8: 6,
+    9: 5,
+    10: 5,
+    11: 5,
+    12: 4
+}
