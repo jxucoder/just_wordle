@@ -199,7 +199,7 @@ if wordle_key is None:
                      "hint": hint_from_form,
                      "link": social_from_form},
                 ]
-                insert_rows_into_table('wordles', 'tries', rows_to_insert)
+                insert_rows_into_table('wordles', 'wordles', rows_to_insert)
                 import streamlit as st
                 from bokeh.models.widgets import Button
                 from bokeh.models import CustomJS
