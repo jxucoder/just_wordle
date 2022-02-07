@@ -1,7 +1,6 @@
 import streamlit as st
 from defs import CSS
 from enum import Enum
-import SessionState
 from google.oauth2 import service_account
 from google.cloud import bigquery
 import uuid
@@ -22,7 +21,6 @@ def run_query(client, query):
     return rows
 
 
-session_state = SessionState.get(answer="", tries=[], name="", social_media_link="", hint='', win=False)
 query_params = st.experimental_get_query_params()
 wordle_key = query_params["wordle_key"][0] if "wordle_key" in query_params else None
 leaderboard = query_params["leaderboard"][0] if "leaderboard" in query_params else None
@@ -37,10 +35,10 @@ class LetterStatus(Enum):
 def get_classes(input_word):
     classes = [LetterStatus.miss] * len(input_word)
     for i, letter in enumerate(input_word):
-        if letter in session_state.answer:
+        if letter in st.session_state.answer:
             classes[i] = LetterStatus.mention
     for i, letter in enumerate(input_word):
-        if letter == session_state.answer[i]:
+        if letter == st.session_state.answer[i]:
             classes[i] = LetterStatus.hit
     return classes
 
@@ -62,15 +60,14 @@ def add_word(container, input_word):
         st.warning("English Letter only.")
     else:
         input_word = input_word.upper()
-        global session_state
-        if len(session_state.tries) > 0 and input_word == session_state.tries[-1]:
+        if len(st.session_state.tries) > 0 and input_word == st.session_state.tries[-1]:
             pass
         else:
-            session_state.tries.append(input_word)
+            st.session_state.tries.append(input_word)
 
     squares_matrix = []
     words_matrix = []
-    for word_try in session_state.tries:
+    for word_try in st.session_state.tries:
         words_matrix.append(word_try)
         classes = get_classes(word_try)
         squares_matrix.append("".join([COLORED_SQUARE_MAPPING[c.value] for c in classes]))
@@ -79,7 +76,7 @@ def add_word(container, input_word):
     words_matrix_text = ", ".join(words_matrix)
     st.code(squares_matrix_text)
     if set(classes) == set([LetterStatus.hit]):
-        session_state.win = True
+        st.session_state.win = True
         with st.form("win_form"):
             st.write("Congratulations! You won!")
             record_name = st.text_input("name/alias to display in leaderboard")
@@ -110,10 +107,10 @@ def add_word(container, input_word):
 
 def validate_guess_and_refresh(guess):
     if guess:
-        if len(guess) == len(session_state.answer):
+        if len(guess) == len(st.session_state.answer):
             add_word(c, guess)
         else:
-            st.warning(f"Please enter a word of length {len(session_state.answer)}")
+            st.warning(f"Please enter a word of length {len(st.session_state.answer)}")
 
 def create_client():
     credentials = service_account.Credentials.from_service_account_info(
@@ -141,7 +138,7 @@ if wordle_key and leaderboard == "true":
         st.code(word_status)
         st.write('----')
 
-elif wordle_key and session_state.answer == "":
+elif wordle_key and 'answer' not in st.session_state:
     # case 1: test take initialization
     client = create_client()
     rows = run_query(client, f"SELECT * FROM `openwordle.wordles.wordles` where wordle_key='{wordle_key}'")
@@ -150,22 +147,23 @@ elif wordle_key and session_state.answer == "":
         st.write(f"Visit [Just Wordle]({URL}) to create a wordle of your own.")
     else:
         record = rows[0]
-        session_state.answer = record['answer']
-        session_state.name = record['name']
-        session_state.social_media_link = record['link']
-        session_state.hint = record['hint']
-        st.write(f"by [{session_state.name}]({session_state.social_media_link})")
-        st.write(f"**Creator's hint**: {session_state.hint}")
+        st.session_state.answer = record['answer']
+        st.session_state.name = record['name']
+        st.session_state.social_media_link = record['link']
+        st.session_state.hint = record['hint']
+        st.session_state.tries = []
+        st.write(f"by [{st.session_state.name}]({st.session_state.social_media_link})")
+        st.write(f"**Creator's hint**: {st.session_state.hint}")
         c = st.container()
-        guess = st.text_input(f'Enter your guess (length {len(session_state.answer)})')
+        guess = st.text_input(f'Enter your guess (length {len(st.session_state.answer)})')
         validate_guess_and_refresh(guess)
 
-elif wordle_key and session_state.answer:
-    # case 2: test taker after first try
-    st.write(f"by [{session_state.name}]({session_state.social_media_link})")
-    st.write(f"**Creator's hint**: {session_state.hint}")
+elif wordle_key and 'answer' in st.session_state:
+    # case 2: take test after first try
+    st.write(f"by [{st.session_state.name}]({st.session_state.social_media_link})")
+    st.write(f"**Creator's hint**: {st.session_state.hint}")
     c = st.container()
-    guess = st.text_input(f'Enter your guess (length {len(session_state.answer)})')
+    guess = st.text_input(f'Enter your guess ({len(st.session_state.answer)} letters)')
     validate_guess_and_refresh(guess)
 
 else:
@@ -177,6 +175,11 @@ else:
         hint_from_form = st.text_input("Hint")
         social_from_form = st.text_input("Social Media link (optional)")
         btn = st.form_submit_button("Create Wordle")
+
+        word_from_form = word_from_form.strip()
+        hint_from_form = hint_from_form.strip()
+        social_from_form = social_from_form.strip()
+
         if btn:
             if not word_from_form.isalpha():
                 st.warning("The word can only have English letters")
