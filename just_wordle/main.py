@@ -64,7 +64,6 @@ def add_word(container, input_word):
             pass
         else:
             st.session_state.tries.append(input_word)
-
     squares_matrix = []
     words_matrix = []
     for word_try in st.session_state.tries:
@@ -138,7 +137,7 @@ if wordle_key and leaderboard == "true":
         st.code(word_status)
         st.write('----')
 
-elif wordle_key and 'answer' not in st.session_state:
+if wordle_key and 'answer' not in st.session_state:
     # case 1: test take initialization
     client = create_client()
     rows = run_query(client, f"SELECT * FROM `openwordle.wordles.wordles` where wordle_key='{wordle_key}'")
@@ -152,13 +151,8 @@ elif wordle_key and 'answer' not in st.session_state:
         st.session_state.social_media_link = record['link']
         st.session_state.hint = record['hint']
         st.session_state.tries = []
-        st.write(f"by [{st.session_state.name}]({st.session_state.social_media_link})")
-        st.write(f"**Creator's hint**: {st.session_state.hint}")
-        c = st.container()
-        guess = st.text_input(f'Enter your guess (length {len(st.session_state.answer)})')
-        validate_guess_and_refresh(guess)
 
-elif wordle_key and 'answer' in st.session_state:
+if wordle_key and 'answer' in st.session_state:
     # case 2: take test after first try
     st.write(f"by [{st.session_state.name}]({st.session_state.social_media_link})")
     st.write(f"**Creator's hint**: {st.session_state.hint}")
