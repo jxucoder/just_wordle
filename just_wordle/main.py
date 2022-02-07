@@ -11,7 +11,9 @@ import json
 from datetime import datetime
 
 
+st.set_page_config("Just Wordle")
 URL = "https://justwordle.com/"
+
 
 def run_query(client, query):
     query_job = client.query(query)
@@ -121,7 +123,6 @@ def create_client():
     return client
 
 st.title("Just [Wordle](https://justwordle.com)")
-st.set_page_config("Just Wordle")
 st.write(CSS, unsafe_allow_html=True)
 
 if wordle_key and leaderboard == "true":
@@ -199,5 +200,36 @@ else:
                     print("New rows have been added.")
                 else:
                     print(errors)
-                st.code(f'Hi! I created a Wordle at https://justwordle.com/?wordle_key={uuid_rand}. '
-                        f'Can you solve it?')
+
+                import streamlit as st
+                from bokeh.models.widgets import Button
+                from bokeh.models import CustomJS
+                from streamlit_bokeh_events import streamlit_bokeh_events
+                import urllib.parse
+
+                sharable_text = f'Hey! I created a Wordle at https://justwordle.com/?wordle_key={uuid_rand} ' \
+                                f'Can you solve it? Hint: {hint_from_form}'
+                url_safe_sharable_text = urllib.parse.quote(sharable_text)
+
+                st.write("Go to this [new wordle](https://justwordle.com/?wordle_key={uuid_rand})")
+                st.write(f"""Or <a href="https://twitter.com/intent/tweet?text={url_safe_sharable_text}" class="twitter-share-button" 
+                data-show-count="false">Tweet it out</a>!""",
+                         unsafe_allow_html=True)
+
+
+                copy_dict = {"content": sharable_text}
+
+                copy_button = Button(label="Copy the text above")
+                copy_button.js_on_event("button_click", CustomJS(args=copy_dict, code="""
+                    navigator.clipboard.writeText(content);
+                    """))
+                st.text_area("share with your friends", sharable_text)
+                no_event = streamlit_bokeh_events(
+                    copy_button,
+                    events="GET_TEXT",
+                    key="get_text",
+                    refresh_on_update=True,
+                    override_height=75,
+                    debounce_time=0)
+
+st.write("<br><br><br>made by [jx](https://twitter.com/jerrycxu)", unsafe_allow_html=True)
